@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -87,5 +88,49 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
     public void cleanShoppingCart() {
         Long userId = BaseContext.getCurrentId();
         shoppingCartMapper.deleteByUserId(userId);
+    }
+
+    /**
+     * 删除购物车中一个商品
+     * @param shoppingCartDTO
+     */
+    @Override
+    @Transactional
+    public void sub(ShoppingCartDTO shoppingCartDTO) {
+        Long dishId = shoppingCartDTO.getDishId();
+        Long setmealId = shoppingCartDTO.getSetmealId();
+        String dishFlavor = shoppingCartDTO.getDishFlavor();
+        Long userId = BaseContext.getCurrentId();
+        if(setmealId != null) {
+            ShoppingCart cart = new ShoppingCart();
+            cart.setSetmealId(setmealId);
+            cart.setUserId(userId);
+            List<ShoppingCart> carts = shoppingCartMapper.list(cart);
+            cart = carts.get(0);
+            if(cart.getNumber() > 1) {
+                cart.setNumber(cart.getNumber() - 1);
+                shoppingCartMapper.updateNumberById(cart);
+            }
+            else {
+                shoppingCartMapper.delete(cart);
+            }
+        }
+        else {
+            ShoppingCart cart = new ShoppingCart();
+            if(dishFlavor != null) {
+                cart.setDishFlavor(dishFlavor);
+            }
+            cart.setDishId(dishId);
+            cart.setUserId(userId);
+            List<ShoppingCart> carts = shoppingCartMapper.list(cart);
+            cart = carts.get(0);
+            if(cart.getNumber() > 1) {
+                cart.setNumber(cart.getNumber() - 1);
+                shoppingCartMapper.updateNumberById(cart);
+            }
+            else {
+                shoppingCartMapper.delete(cart);
+            }
+        }
     }
 }
